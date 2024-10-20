@@ -1,66 +1,41 @@
-CC ?= gcc
+CC ?= cc
+C_FLAGS := -std=gnu11 $\
+					 -Wall -Wextra -Wpedantic $\
+					 -O2 -march=native -pipe $\
+					 -Iinclude -Ideps/miniaudio
+LD_FLAGS := -ldl -lpthread -lm
 
-STANDARD := -std=gnu11
-
-LINK_FLAGS :=  -ldl -lm -lpthread
-INCLUDE_FLAGS :=  -Ideps/miniaudio/extras/miniaudio_split -Iinclude
-
-SOURCE_FILES := src/main.c src/directory_utils.c src/stdin_utils.c
-HEADER_FILES   := config.h include/directory_utils.h include/stdin_utils.h
-
-DEBUG_FLAGS := -Wall -Wextra -Wpedantic
-OPTIMIZATION_FLAGS := -O2 -march=native
+DIRECTORIES := build deps
+DEPENDENCIES := deps/miniaudio
 
 INSTALL_DIRECTORY := /usr/local/bin
 
-OBJECT_FILES := build/miniaudio.c.o build/directory_utils.c.o build/stdin_utils.c.o build/main.c.o
+OBJECT_FILES := build/miniaudio.o build/directory_utils.o build/stdin_utils.o build/main.o
 
-define COMPILE_FILE
-	${CC} -c ${STANDARD} $(1) ${INCLUDE_FLAGS} ${DEBUG_FLAGS} ${OPTIMIZATION_FLAGS} -o build/$(notdir $(1)).o 
+all: ${DIRECTORIES} ${DEPENDENCIES} splayer
 
-endef
+${DIRECTORIES}:
+	-mkdir ${DIRECTORIES}
 
-all: splayer
-
-build:
-	mkdir build
-
-build/directory_utils.c.o: include/directory_utils.h src/directory_utils.c
-	$(call COMPILE_FILE,src/directory_utils.c)
-
-build/main.c.o: config.h include/directory_utils.h include/stdin_utils.h src/main.c
-	$(call COMPILE_FILE,src/main.c)
-
-build/miniaudio.c.o: deps/miniaudio deps/miniaudio/extras/miniaudio_split/miniaudio.c
-	$(call COMPILE_FILE,deps/miniaudio/extras/miniaudio_split/miniaudio.c)
-
-build/stdin_utils.c.o: include/stdin_utils.h src/stdin_utils.c
-	$(call COMPILE_FILE,src/stdin_utils.c)
-
-deps:
-	mkdir deps
-
-deps/miniaudio: deps
+deps/miniaudio:
 	git -C deps clone https://github.com/mackron/miniaudio --depth=1
 
-splayer: build ${OBJECT_FILES}
-	cc ${OBJECT_FILES} ${LINK_FLAGS} -o splayer
+${OBJECT_FILES}: build/%.o :src/%.c
+	${CC} -c $< ${C_FLAGS} -o $@
+
+splayer: ${OBJECT_FILES}
+	${CC} ${OBJECT_FILES} ${LD_FLAGS} -o splayer
+	strip splayer
 
 install: splayer ${INSTALL_DIRECTORY}
-	cp -f splayer ${INSTALL_DIRECTORY}
+	-cp -f splayer ${INSTALL_DIRECTORY}
 
 uninstall:
-ifneq (, $(wildcard ${INSTALL_DIRECTORY}/splayer))
-	rm -f ${INSTALL_DIRECTORY}/splayer
-endif
+	-rm -f ${INSTALL_DIRECTORY}/splayer
 
 clean:
-ifneq (, $(wildcard splayer))
-	rm -f splayer
-endif
-ifneq (, $(wildcard build))
-	rm -rf build
-endif
-ifneq (, $(wildcard deps))
-	rm -rf deps
-endif
+	-rm -f splayer
+	-rm -rf build
+	-rm -rf deps
+
+.PHONY: all clean install uninstall
