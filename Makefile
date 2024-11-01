@@ -5,20 +5,11 @@ C_FLAGS := -std=gnu11 $\
 					 -Iinclude -Ideps/miniaudio
 LD_FLAGS := -ldl -lpthread -lm
 
-DIRECTORIES := build deps
-DEPENDENCIES := deps/miniaudio
-
 INSTALL_DIRECTORY := /usr/local/bin
 
 OBJECT_FILES := build/miniaudio.o build/directory_utils.o build/stdin_utils.o build/main.o
 
-all: ${DIRECTORIES} ${DEPENDENCIES} splayer
-
-${DIRECTORIES}:
-	-mkdir ${DIRECTORIES}
-
-deps/miniaudio:
-	git -C deps clone https://github.com/mackron/miniaudio --depth=1
+all: splayer
 
 ${OBJECT_FILES}: build/%.o :src/%.c
 	${CC} -c $< ${C_FLAGS} -o $@
