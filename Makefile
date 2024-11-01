@@ -7,11 +7,13 @@ LD_FLAGS := -ldl -lpthread -lm
 
 INSTALL_DIRECTORY := /usr/local/bin
 
-OBJECT_FILES := build/miniaudio.o build/directory_utils.o build/stdin_utils.o build/main.o
+OBJECT_FILES := $(patsubst src/%.c,$\
+									build/%.o,$\
+									$(shell find src -name '*.c'))
 
 all: splayer
 
-${OBJECT_FILES}: build/%.o :src/%.c
+build/%.o: src/%.c
 	${CC} -c $< ${C_FLAGS} -o $@
 
 splayer: ${OBJECT_FILES}
@@ -26,7 +28,5 @@ uninstall:
 
 clean:
 	-rm -f splayer
-	-rm -rf build
-	-rm -rf deps
 
 .PHONY: all clean install uninstall
